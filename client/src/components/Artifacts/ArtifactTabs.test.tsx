@@ -11,10 +11,6 @@ interface EditorProps {
 }
 
 const mockEditor = jest.fn((_props: EditorProps) => null);
-const mockUseGetStartupConfig = jest.fn((_options?: unknown) => ({ data: {} }));
-const mockUseGetSharedStartupConfig = jest.fn((_shareId?: unknown, _options?: unknown) => ({
-  data: {},
-}));
 let mockCurrentCode: string | undefined;
 let mockCodeArtifactId: string | undefined;
 
@@ -57,21 +53,6 @@ jest.mock('~/Providers/EditorContext', () => ({
     mockCodeArtifactId === artifactId ? mockCurrentCode : undefined,
 }));
 
-jest.mock('~/Providers', () => ({
-  useShareContext: () => ({ shareId: undefined }),
-}));
-
-jest.mock('~/data-provider', () => ({
-  useGetStartupConfig: (options: unknown) => mockUseGetStartupConfig(options),
-  useGetSharedStartupConfig: (shareId: unknown, options: unknown) =>
-    mockUseGetSharedStartupConfig(shareId, options),
-}));
-
-jest.mock('~/hooks/Artifacts/useArtifactProps', () => ({
-  __esModule: true,
-  default: () => ({ files: {}, fileKey: 'diagram.mmd', template: 'static', sharedProps: {} }),
-}));
-
 const preview: SandpackPreviewRef = Object.create(null);
 const previewRef: React.MutableRefObject<SandpackPreviewRef> = { current: preview };
 
@@ -86,13 +67,11 @@ function renderArtifact(artifact: Artifact, activeTab: 'code' | 'preview' = 'cod
 describe('ArtifactTabs Mermaid editing', () => {
   beforeEach(() => {
     mockEditor.mockClear();
-    mockUseGetStartupConfig.mockClear();
-    mockUseGetSharedStartupConfig.mockClear();
     mockCurrentCode = undefined;
     mockCodeArtifactId = undefined;
   });
 
-  it('renders Mermaid natively without loading startup config or Sandpack preview', () => {
+  it('renders Mermaid natively without loading the sandbox preview chunk', () => {
     const testGlobal = globalThis as typeof globalThis & {
       artifactPreviewModuleEvaluations?: number;
       nativeMermaidRenderer?: jest.Mock;
@@ -109,8 +88,6 @@ describe('ArtifactTabs Mermaid editing', () => {
       'preview',
     );
 
-    expect(mockUseGetStartupConfig).not.toHaveBeenCalled();
-    expect(mockUseGetSharedStartupConfig).not.toHaveBeenCalled();
     expect(testGlobal.artifactPreviewModuleEvaluations ?? 0).toBe(0);
     expect(testGlobal.nativeMermaidRenderer?.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
@@ -304,7 +281,7 @@ describe('ArtifactTabs Mermaid editing', () => {
     expect(getByTestId('mermaid-renderer').getAttribute('data-instance')).toBe(initialInstance);
   });
 
-  it('keeps non-Mermaid Artifacts on the startup-config and sandbox preview path', async () => {
+  it('keeps non-Mermaid Artifacts on the lazy sandbox preview path', async () => {
     const testGlobal = globalThis as typeof globalThis & {
       artifactPreviewModuleEvaluations?: number;
     };
@@ -319,7 +296,6 @@ describe('ArtifactTabs Mermaid editing', () => {
       'preview',
     );
 
-    await waitFor(() => expect(mockUseGetStartupConfig).toHaveBeenCalledWith({ enabled: true }));
-    expect(testGlobal.artifactPreviewModuleEvaluations).toBe(1);
+    await waitFor(() => expect(testGlobal.artifactPreviewModuleEvaluations).toBe(1));
   });
 });

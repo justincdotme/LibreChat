@@ -1,3 +1,4 @@
+import './monaco';
 import React, { useMemo, useState, useEffect, useRef, useCallback, useContext } from 'react';
 import debounce from 'lodash/debounce';
 import MonacoEditor from '@monaco-editor/react';
@@ -696,41 +697,16 @@ export const ArtifactCodeEditor = function ArtifactCodeEditor({
   );
 
   /**
-   * Disable all validation — this is an artifact viewer/editor, not an IDE.
-   * Note: these are global Monaco settings that affect all editor instances on the page.
-   * The `as unknown` cast is required because monaco-editor v0.55 types `.languages.typescript`
-   * as `{ deprecated: true }` while the runtime API is fully functional.
+   * Disable all validation: this is an artifact viewer and editor, not an IDE.
+   * These are global Monaco settings that affect all editor instances on the page.
+   * The TypeScript defaults live on the top-level `typescript` namespace; the
+   * `languages.typescript` stub has no runtime value in the ESM build.
    */
   const handleBeforeMount = useCallback((monaco: Monaco) => {
     monaco.editor.defineTheme(HIGH_CONTRAST_LIGHT_EDITOR_THEME, highContrastLightEditorTheme);
     monaco.editor.defineTheme(HIGH_CONTRAST_DARK_EDITOR_THEME, highContrastDarkEditorTheme);
 
-    const { typescriptDefaults, javascriptDefaults, JsxEmit } = monaco.languages
-      .typescript as unknown as {
-      typescriptDefaults: {
-        setDiagnosticsOptions: (o: {
-          noSemanticValidation: boolean;
-          noSyntaxValidation: boolean;
-        }) => void;
-        setCompilerOptions: (o: {
-          allowNonTsExtensions: boolean;
-          allowJs: boolean;
-          jsx: number;
-        }) => void;
-      };
-      javascriptDefaults: {
-        setDiagnosticsOptions: (o: {
-          noSemanticValidation: boolean;
-          noSyntaxValidation: boolean;
-        }) => void;
-        setCompilerOptions: (o: {
-          allowNonTsExtensions: boolean;
-          allowJs: boolean;
-          jsx: number;
-        }) => void;
-      };
-      JsxEmit: { React: number };
-    };
+    const { typescriptDefaults, javascriptDefaults, JsxEmit } = monaco.typescript;
     const diagnosticsOff = { noSemanticValidation: true, noSyntaxValidation: true };
     const compilerBase = { allowNonTsExtensions: true, allowJs: true, jsx: JsxEmit.React };
     typescriptDefaults.setDiagnosticsOptions(diagnosticsOff);

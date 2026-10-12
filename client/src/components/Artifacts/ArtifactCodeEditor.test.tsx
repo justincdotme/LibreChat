@@ -181,12 +181,10 @@ const createMonacoMock = () => {
   const defineTheme = jest.fn();
   const monaco = {
     editor: { defineTheme },
-    languages: {
-      typescript: {
-        typescriptDefaults: defaults,
-        javascriptDefaults: defaults,
-        JsxEmit: { React: 1 },
-      },
+    typescript: {
+      typescriptDefaults: defaults,
+      javascriptDefaults: defaults,
+      JsxEmit: { React: 1 },
     },
   } as unknown as Monaco;
 
