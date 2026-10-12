@@ -5,6 +5,7 @@ import rehypeKatex from 'rehype-katex';
 import supersub from 'remark-supersub';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
+import type { UrlTransform } from 'react-markdown';
 import type { PluggableList } from 'unified';
 import { code, codeNoExecution, a, p, img, table } from './MarkdownComponents';
 import { CodeBlockProvider, ArtifactProvider } from '~/Providers';
@@ -12,7 +13,15 @@ import MarkdownErrorBoundary from './MarkdownErrorBoundary';
 import { langSubset, remarkApproxTilde } from '~/utils';
 
 const MarkdownLite = memo(
-  ({ content = '', codeExecution = true }: { content?: string; codeExecution?: boolean }) => {
+  ({
+    content = '',
+    codeExecution = true,
+    urlTransform,
+  }: {
+    content?: string;
+    codeExecution?: boolean;
+    urlTransform?: UrlTransform;
+  }) => {
     const rehypePlugins: PluggableList = [
       [rehypeKatex],
       [
@@ -39,6 +48,7 @@ const MarkdownLite = memo(
               ]}
               /** @ts-ignore */
               rehypePlugins={rehypePlugins}
+              urlTransform={urlTransform}
               components={
                 {
                   code: codeExecution ? code : codeNoExecution,

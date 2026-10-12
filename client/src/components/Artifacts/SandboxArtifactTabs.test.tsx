@@ -1,14 +1,12 @@
 import React from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { render } from '@testing-library/react';
-import type { SandpackPreviewRef } from '@codesandbox/sandpack-react/unstyled';
 import type { Artifact } from '~/common';
 import SandboxArtifactTabs from './SandboxArtifactTabs';
 
 interface PreviewProps {
-  files: Record<string, string>;
-  fileKey: string;
-  currentCode?: string;
+  type?: string;
+  content: string;
 }
 
 const mockPreview = jest.fn((_props: PreviewProps) => null);
@@ -28,109 +26,78 @@ jest.mock('~/Providers/EditorContext', () => ({
     mockCodeArtifactId === artifactId ? mockCurrentCode : undefined,
 }));
 
-jest.mock('~/Providers', () => ({
-  useShareContext: () => ({ shareId: undefined }),
-}));
-
-jest.mock('~/data-provider', () => ({
-  useGetStartupConfig: () => ({ data: {} }),
-  useGetSharedStartupConfig: () => ({ data: {} }),
-}));
-
-const previewRef = {
-  current: Object.create(null) as SandpackPreviewRef,
-} as React.MutableRefObject<SandpackPreviewRef>;
-
-const original =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
-const edited =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>';
-
-const svgArtifact: Artifact = {
-  id: 'svg-artifact-1',
-  type: 'image/svg+xml',
-  title: 'Chart',
-  content: original,
+const markdownArtifact: Artifact = {
+  id: 'markdown-artifact-1',
+  type: 'text/markdown',
+  title: 'Notes',
+  content: '# Original',
   lastUpdateTime: 1,
 };
 
-function renderTabs(artifact: Artifact = svgArtifact) {
+function renderTabs(artifact: Artifact = markdownArtifact) {
   return render(
     <Tabs.Root value="preview">
-      <SandboxArtifactTabs artifact={artifact} previewRef={previewRef} />
+      <SandboxArtifactTabs artifact={artifact} />
     </Tabs.Root>,
   );
 }
 
-function lastFiles(): Record<string, string> {
-  return mockPreview.mock.calls.at(-1)?.[0].files ?? {};
+function lastPreview(): PreviewProps | undefined {
+  return mockPreview.mock.calls.at(-1)?.[0];
 }
 
-describe('SandboxArtifactTabs SVG preview', () => {
+describe('SandboxArtifactTabs preview', () => {
   beforeEach(() => {
     mockCurrentCode = undefined;
     mockCodeArtifactId = undefined;
     mockPreview.mockClear();
   });
 
-  /** An SVG preview renders a derived `index.html`, so an edit that only
-   * replaced `index.svg` left the preview showing the original drawing. */
-  it('rebuilds the preview shell from the edited source', () => {
+  it('hands the artifact type and markdown source to the preview', () => {
+    renderTabs();
+
+    expect(lastPreview()).toEqual({ type: 'text/markdown', content: '# Original' });
+  });
+
+  it('previews the edited text once the editor owns this artifact', () => {
     const { rerender } = renderTabs();
-    expect(lastFiles()['index.html']).toContain(original);
 
     /* Editor text belongs to the preview only once it was typed against the
      * artifact on screen, so it lands on a later render, not on mount. */
-    mockCurrentCode = edited;
-    mockCodeArtifactId = svgArtifact.id;
+    mockCurrentCode = '# Edited';
+    mockCodeArtifactId = markdownArtifact.id;
     rerender(
       <Tabs.Root value="preview">
-        <SandboxArtifactTabs artifact={svgArtifact} previewRef={previewRef} />
+        <SandboxArtifactTabs artifact={markdownArtifact} />
       </Tabs.Root>,
     );
 
-    const files = lastFiles();
-    expect(files['index.svg']).toBe(edited);
-    expect(files['index.html']).toContain(edited);
-    expect(files['index.html']).not.toContain('<rect');
+    expect(lastPreview()?.content).toBe('# Edited');
   });
 
   it('keeps the artifact source when the editor is emptied', () => {
     const { rerender } = renderTabs();
 
     mockCurrentCode = '';
-    mockCodeArtifactId = svgArtifact.id;
+    mockCodeArtifactId = markdownArtifact.id;
     rerender(
       <Tabs.Root value="preview">
-        <SandboxArtifactTabs artifact={svgArtifact} previewRef={previewRef} />
+        <SandboxArtifactTabs artifact={markdownArtifact} />
       </Tabs.Root>,
     );
 
-    expect(lastFiles()['index.html']).toContain(original);
+    expect(lastPreview()?.content).toBe('# Original');
   });
 
-  it('leaves artifacts whose preview entry is the edited file untouched', () => {
-    const htmlArtifact: Artifact = {
+  it('passes other types through unchanged so the preview can refuse them', () => {
+    renderTabs({
       id: 'html-artifact-1',
       type: 'text/html',
       title: 'Page',
       content: '<p>original</p>',
       lastUpdateTime: 1,
-    };
+    });
 
-    const { rerender } = renderTabs(htmlArtifact);
-
-    mockCurrentCode = '<p>edited</p>';
-    mockCodeArtifactId = htmlArtifact.id;
-    rerender(
-      <Tabs.Root value="preview">
-        <SandboxArtifactTabs artifact={htmlArtifact} previewRef={previewRef} />
-      </Tabs.Root>,
-    );
-
-    /* `ArtifactPreview` owns this swap; the tabs must not pre-empt it. */
-    const call = mockPreview.mock.calls.at(-1)?.[0];
-    expect(call?.files['index.html']).toBe('<p>original</p>');
-    expect(call?.currentCode).toBe('<p>edited</p>');
+    expect(lastPreview()).toEqual({ type: 'text/html', content: '<p>original</p>' });
   });
 });

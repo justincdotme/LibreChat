@@ -1,66 +1,45 @@
-import React, { memo, useMemo, type MutableRefObject } from 'react';
-import { SandpackPreview, SandpackProvider } from '@codesandbox/sandpack-react/unstyled';
-import type {
-  SandpackProviderProps,
-  SandpackPreviewRef,
-} from '@codesandbox/sandpack-react/unstyled';
-import type { SandpackStartupConfig } from '~/utils/artifacts';
-import type { ArtifactFiles } from '~/common';
-import { sharedFiles, buildSandpackOptions } from '~/utils/artifacts';
+import { memo } from 'react';
+import { defaultUrlTransform } from 'react-markdown';
+import type { UrlTransform } from 'react-markdown';
+import MarkdownLite from '~/components/Chat/Messages/Content/MarkdownLite';
+import { useLocalize } from '~/hooks';
 
-export const ArtifactPreview = memo(function ({
-  files,
-  fileKey,
-  template,
-  sharedProps,
-  previewRef,
-  currentCode,
-  startupConfig,
+const MARKDOWN_TYPES = new Set(['text/markdown', 'text/md', 'text/plain']);
+
+/* Following a link is the reader's choice, but an image is fetched on render,
+ * so any image source with a scheme or host is dropped before it can leave. */
+const localImagesOnly: UrlTransform = (url, key) => {
+  if (key !== 'href' && (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith('//'))) {
+    return '';
+  }
+  return defaultUrlTransform(url);
+};
+
+/* Every other type used to render in a Sandpack iframe served by CodeSandbox
+ * with scripts from public CDNs, so this deployment refuses them outright. */
+export const ArtifactPreview = memo(function ArtifactPreview({
+  type,
+  content,
 }: {
-  files: ArtifactFiles;
-  fileKey: string;
-  template: SandpackProviderProps['template'];
-  sharedProps: Partial<SandpackProviderProps>;
-  previewRef: MutableRefObject<SandpackPreviewRef>;
-  currentCode?: string;
-  startupConfig?: SandpackStartupConfig;
+  type?: string;
+  content: string;
 }) {
-  const artifactFiles = useMemo(() => {
-    if (Object.keys(files).length === 0) {
-      return files;
-    }
-    const code = currentCode ?? '';
-    if (!code) {
-      return files;
-    }
-    return {
-      ...files,
-      [fileKey]: { code },
-    };
-  }, [currentCode, files, fileKey]);
+  const localize = useLocalize();
 
-  const options: SandpackProviderProps['options'] = useMemo(
-    () => buildSandpackOptions(template, startupConfig),
-    [startupConfig, template],
-  );
-
-  if (Object.keys(artifactFiles).length === 0) {
-    return null;
+  if (!MARKDOWN_TYPES.has(type ?? '')) {
+    return (
+      <div
+        className="bg-surface-primary text-text-secondary flex h-full w-full items-center justify-center p-4 text-sm"
+        role="status"
+      >
+        {localize('com_ui_preview_unavailable')}
+      </div>
+    );
   }
 
   return (
-    <SandpackProvider
-      files={{ ...artifactFiles, ...sharedFiles }}
-      options={options}
-      {...sharedProps}
-      template={template}
-    >
-      <SandpackPreview
-        showOpenInCodeSandbox={false}
-        showRefreshButton={false}
-        tabIndex={0}
-        ref={previewRef}
-      />
-    </SandpackProvider>
+    <div className="markdown prose light dark:prose-invert text-text-primary h-full w-full overflow-auto p-4 break-words">
+      <MarkdownLite content={content} codeExecution={false} urlTransform={localImagesOnly} />
+    </div>
   );
 });

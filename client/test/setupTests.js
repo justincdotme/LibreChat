@@ -74,3 +74,6 @@ jest.mock('react-i18next', () => {
     },
   };
 });
+
+// Monaco's local wiring imports Vite `?worker` modules, which Jest cannot resolve.
+jest.mock('~/components/Artifacts/monaco', () => ({}));

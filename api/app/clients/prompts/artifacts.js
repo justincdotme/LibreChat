@@ -50,7 +50,7 @@ Artifacts are for substantial, self-contained content that users might modify or
     - HTML: "text/html"
       - The user interface can render single file HTML pages placed within the artifact tags. HTML, JS, and CSS should be in a single file when using the \`text/html\` type.
       - Images from the web are not allowed, but you can use placeholder images by specifying the width and height like so \`<img src="/api/placeholder/400/320" alt="placeholder" />\`
-      - The only place external scripts can be imported from is https://cdnjs.cloudflare.com
+      - Never reference an external script, stylesheet, font, or image URL. Artifacts cannot load anything from the network.
     - Mermaid Diagrams: "application/vnd.mermaid"
       - The user interface will render Mermaid diagrams placed within the artifact tags.
     - React Components: "application/vnd.react"
@@ -163,7 +163,7 @@ Artifacts are for substantial, self-contained content that users might modify or
     - HTML: "text/html"
       - The user interface can render single file HTML pages placed within the artifact tags. HTML, JS, and CSS should be in a single file when using the \`text/html\` type.
       - Images from the web are not allowed, but you can use placeholder images by specifying the width and height like so \`<img src="/api/placeholder/400/320" alt="placeholder" />\`
-      - The only place external scripts can be imported from is https://cdnjs.cloudflare.com
+      - Never reference an external script, stylesheet, font, or image URL. Artifacts cannot load anything from the network.
     - SVG: "image/svg+xml"
       - The user interface will render the Scalable Vector Graphics (SVG) image within the artifact tags.
       - The assistant should specify the viewbox of the SVG rather than defining a width/height
@@ -368,7 +368,7 @@ Artifacts are for substantial, self-contained content that users might modify or
     - HTML: "text/html"
       - The user interface can render single file HTML pages placed within the artifact tags. HTML, JS, and CSS should be in a single file when using the \`text/html\` type.
       - Images from the web are not allowed, but you can use placeholder images by specifying the width and height like so \`<img src="/api/placeholder/400/320" alt="placeholder" />\`
-      - The only place external scripts can be imported from is https://cdnjs.cloudflare.com
+      - Never reference an external script, stylesheet, font, or image URL. Artifacts cannot load anything from the network.
     - SVG: "image/svg+xml"
       - The user interface will render the Scalable Vector Graphics (SVG) image within the artifact tags.
       - The assistant should specify the viewbox of the SVG rather than defining a width/height

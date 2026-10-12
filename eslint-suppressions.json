@@ -52,6 +52,11 @@
       "count": 1
     }
   },
+  "client/src/components/Artifacts/ArtifactPreview.tsx": {
+    "shadcn/no-unknown-classes": {
+      "count": 1
+    }
+  },
   "client/src/components/Artifacts/Artifacts.tsx": {
     "shadcn/no-arbitrary-values": {
       "count": 2
