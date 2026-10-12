@@ -1,0 +1,48 @@
+# Compose override for the zero-WAN deployment (not a default Compose filename, so
+# running compose from this directory does not pick it up alone). Selected through COMPOSE_FILE in
+# the project .env, which setup.sh writes along with ZERO_WAN_SUBNET and
+# ZERO_WAN_BRIDGE.
+services:
+  api:
+    image: librechat-zero-wan
+    build:
+      context: .
+      target: node
+    ports: !override
+      - "127.0.0.1:${PORT:-3080}:${PORT:-3080}"
+    depends_on: !override
+      - mongodb
+    # The base file aliases the host; nothing in this deployment needs it.
+    extra_hosts: !override []
+    environment: !override
+      - HOST=0.0.0.0
+      - MONGO_URI=mongodb://mongodb:27017/LibreChat
+      - MEILI_HOST=http://meilisearch:7700
+      - LIBRECHAT_TEMP_CREDENTIALS_PATH=/app/data/.env.temp
+      - NO_PROXY=localhost,127.0.0.1,::1,mongodb,meilisearch
+      - no_proxy=localhost,127.0.0.1,::1,mongodb,meilisearch
+      # `npm run backend` is the image CMD; the notifier would call registry.npmjs.org.
+      - NPM_CONFIG_UPDATE_NOTIFIER=false
+      - OFFICE_PREVIEW_DISABLE_CDN=true
+      # One api replica and no Redis; without this the schedule engine refuses to arm.
+      - SCHEDULES_SINGLE_PROCESS=true
+    volumes:
+      - type: bind
+        source: ./docs/zero-wan/config.yaml
+        target: /app/librechat.yaml
+        read_only: true
+  admin-panel:
+    profiles: ["donotstart"]
+  rag_api:
+    profiles: ["donotstart"]
+  vectordb:
+    profiles: ["donotstart"]
+
+networks:
+  default:
+    driver_opts:
+      # Fixed bridge name so the firewall and tcpdump commands never need `docker network inspect`.
+      com.docker.network.bridge.name: ${ZERO_WAN_BRIDGE:-br-librechat}
+    ipam:
+      config:
+        - subnet: ${ZERO_WAN_SUBNET:-172.30.0.0/24}

@@ -1,0 +1,6 @@
+# zero-wan: LibreChat site block rendered from docs/zero-wan/Caddyfile.snippet.example
+@CHAT_HOST@ {
+	@CADDY_TLS@
+	reverse_proxy 127.0.0.1:3080
+	header Content-Security-Policy "img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'"
+}
